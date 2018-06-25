@@ -1,31 +1,22 @@
-chrome.storage.local.get("tradeNameByValue", function(result) {
-    chrome.tabs.query({'active': true, 'currentWindow': true}, () => {
-        document.querySelector(".tradeByName").textContent = result.tradeNameByValue;
-    });
+chrome.tabs.query({active: true, currentWindow: true}, tabs => {
+    chrome.tabs.sendMessage(tabs[0].id, "getCards", ({tradeError, tradeNameByValue, tradeNameByKey}) => {
+        if (tradeError) {
+            document.querySelector(".content").textContent = tradeError;
+        } else {
+            document.querySelector(".tradeByName").textContent = tradeNameByValue;
+            document.querySelector(".tradeByOrder").textContent = tradeNameByKey;
 
-    new ClipboardJS('.btn-name', {
-        text: function() {
-            return result.tradeNameByValue;
-        }
-    });
-
-    if (!result.tradeNameByValue) {
-        chrome.storage.local.get("tradeError", function(result) {
-            chrome.tabs.query({'active': true, 'currentWindow': true}, () => {
-                document.querySelector(".content").textContent = result.tradeError;
-            });
-        });
-    } else {
-        chrome.storage.local.get("tradeNameByKey", function(result) {
-            chrome.tabs.query({'active': true, 'currentWindow': true}, () => {
-                document.querySelector(".tradeByOrder").textContent = result.tradeNameByKey;
+            new ClipboardJS('.btn-name', {
+                text: function() {
+                    return tradeNameByValue;
+                }
             });
 
             new ClipboardJS('.btn-key', {
                 text: function() {
-                    return result.tradeNameByKey;
+                    return tradeNameByKey;
                 }
             });
-        });
-    }
+        }
+    });
 });

@@ -1,36 +1,32 @@
-chrome.storage.local.remove(["tradeNameByValue", "tradeNameByKey", "tradeError"]);
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request === "getCards") {
+        const tradeTemplate = `📱✔ [H] {have} [W] {want}`;
+        const cards = Array.from(document.querySelectorAll(".badge_card_set_card"));
+        const H = {};
+        const W = {};
 
-chrome.storage.local.get(['tradeTemplate'], result => {
-    let {tradeTemplate} = result;
+        cards.forEach((item, index) => {
+            let textContent = item.querySelector(".badge_card_set_text").textContent.replace(/\s\s+/g, ' ').trim();
 
-    if (!tradeTemplate) {
-        tradeTemplate = `📱✔ [H] {have} [W] {want}`;
+            if (item.classList.contains("owned") && !textContent.startsWith("(1)")) {
+                H[index+1] = textContent.split(/\s(.+)/)[1];
+            } else if (item.classList.contains("unowned")) {
+                W[index+1] = textContent;
+            }
+        });
 
-        chrome.storage.local.set({tradeTemplate});
-    }
+        if (Object.keys(H).length && Object.keys(W).length) {
+            const tradeNameByValue = tradeTemplate.replace('{have}', Object.values(H).join(", ")).replace('{want}', Object.values(W).join(", "));
+            const tradeNameByKey = tradeTemplate.replace('{have}', Object.keys(H).join(", ")).replace('{want}', Object.keys(W).join(", "));
 
-    const cards = Array.from(document.querySelectorAll(".badge_card_set_card"));
-    const H = {};
-    const W = {};
-
-    cards.forEach((item, index) => {
-        let textContent = item.querySelector(".badge_card_set_text").textContent.replace(/\s\s+/g, ' ').trim();
-
-        if (item.classList.contains("owned") && !textContent.startsWith("(1)")) {
-            H[index+1] = textContent.split(/\s(.+)/)[1];
-        } else if (item.classList.contains("unowned")) {
-            W[index+1] = textContent;
+            sendResponse({
+                tradeNameByValue,
+                tradeNameByKey,
+            });
+        } else {
+            sendResponse({
+                tradeError: `You don't have a cards for exchange`
+            });
         }
-    });
-
-    if (Object.keys(H).length && Object.keys(W).length) {
-        const tradeNameByValue = tradeTemplate.replace('{have}', Object.values(H).join(", ")).replace('{want}', Object.values(W).join(", "));
-        const tradeNameByKey = tradeTemplate.replace('{have}', Object.keys(H).join(", ")).replace('{want}', Object.keys(W).join(", "));
-
-        chrome.storage.local.set({tradeNameByValue});
-        chrome.storage.local.set({tradeNameByKey});
-    } else {
-        chrome.storage.local.set({tradeError: `You don't have a cards for exchange`});
     }
 });
-
